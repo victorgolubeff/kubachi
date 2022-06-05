@@ -1,0 +1,118 @@
+.cabinet-history {
+    padding-top: 20px;
+}
+.cabinet-history .subtitle {
+    color: #003252;
+}
+.cabinet-history .date {
+    width: 14%; text-align: center;
+}
+.cabinet-history .product {
+    width: 30%;
+}
+.cabinet-history .num {
+    width: 10%; text-align: center;
+}
+.cabinet-history .sum {
+    width: 30%; text-align: center;
+}
+.cabinet-history .status {
+    width: 16%;
+}
+.cabinet-history .head {
+    display: table; width: 100%; padding-top: 20px;
+}
+.cabinet-history .head div {
+    display: table-cell; vertical-align: middle; box-sizing: border-box; height: 54px; background: #800c0c;
+    font-size: 12px; font-weight: 500; color: #fff; text-transform: uppercase; line-height: normal;
+}
+.cabinet-history .head div.status {
+    padding-left: 20px;
+}
+.cabinet-history ul {
+
+}
+.cabinet-history li {
+    margin: 0; padding: 20px 0 15px; border-bottom: 4px solid #800c0c;
+    list-style: none;
+}
+.cabinet-history li:first-child {
+    padding-top: 0;
+}
+.cabinet-history li:after {
+    display: none;
+}
+.cabinet-history li .tbl {
+    display: table; width: 100%; padding-top: 15px;
+}
+.cabinet-history li .tbl > div {
+    display: table-cell; vertical-align: top; box-sizing: border-box; line-height: normal; font-size: 14px; color: #747474; font-weight: 300;
+}
+.cabinet-history li .date {
+    text-align: center;
+}
+.cabinet-history li .product {
+
+}
+.cabinet-history li .img {
+    display: table-cell; vertical-align: top; width: 80px;
+}
+.cabinet-history li .entry {
+    display: table-cell; vertical-align: middle;
+}
+.cabinet-history li .title {
+    font-size: 16px; font-weight: 700; text-transform: uppercase;
+}
+.cabinet-history li .title a {
+    text-decoration: none;
+    color: #333333;
+}
+.cabinet-history li .text {
+    font-size: 11px; color: #616161; font-weight: 500; text-transform: uppercase;
+}
+.cabinet-history li .text p {
+    padding: 5px 0 0; margin: 0;
+}
+.cabinet-history li .num {
+
+}
+.cabinet-history li .sum {
+
+}
+.cabinet-history li .status {
+
+}
+.cabinet-history li .rec {
+    padding-top: 10px; font-size: 14px; color: #747474; font-weight: 300; text-align: right;
+}
+.cabinet-history li .rec span {
+    font-weight: 700; color: #790707; text-transform: uppercase;
+}
+
+@media only screen and (max-width: 1000px) {
+    .cabinet-history li .img {
+        display: none;
+    }
+}
+/*
+     FILE ARCHIVED ON 17:26:50 Mar 14, 2022 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 12:40:06 Jun 05, 2022.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 110.595
+  exclusion.robots: 0.124
+  exclusion.robots.policy: 0.114
+  cdx.remote: 0.08
+  esindex: 0.012
+  LoadShardBlock: 67.313 (3)
+  PetaboxLoader3.datanode: 95.619 (5)
+  CDXLines.iter: 17.774 (3)
+  load_resource: 107.759
+  PetaboxLoader3.resolve: 25.763
+  loaddict: 37.038
+*/

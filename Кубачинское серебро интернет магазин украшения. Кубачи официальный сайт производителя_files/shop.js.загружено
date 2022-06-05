@@ -1,0 +1,401 @@
+var _____WB$wombat$assign$function_____ = function(name) {return (self._wb_wombat && self._wb_wombat.local_init && self._wb_wombat.local_init(name)) || self[name]; };
+if (!self.__WB_pmw) { self.__WB_pmw = function(obj) { this.__WB_source = obj; return this; } }
+{
+  let window = _____WB$wombat$assign$function_____("window");
+  let self = _____WB$wombat$assign$function_____("self");
+  let document = _____WB$wombat$assign$function_____("document");
+  let location = _____WB$wombat$assign$function_____("location");
+  let top = _____WB$wombat$assign$function_____("top");
+  let parent = _____WB$wombat$assign$function_____("parent");
+  let frames = _____WB$wombat$assign$function_____("frames");
+  let opener = _____WB$wombat$assign$function_____("opener");
+
+'use strict';
+
+var loader;
+
+var cartApp = {
+    dict: "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
+    config : {
+
+    },
+
+    init : function(config){
+
+        $.extend(cartApp.config, config);
+
+        var hash = window.location.hash;
+        if(hash){
+            var scroll_el = hash.replace('#','');
+            $('a.go-'+scroll_el).click();
+        }
+
+        // в коризну
+        $(document).on('click', '.js-add-cart', function (event) {
+            event.preventDefault();
+            var id = $(this).attr('data-item-id');
+            var quantity = 1;
+            var classes = this.className;
+            if(classes.indexOf('item-main-to-cart') !== -1)
+            {
+                quantity = Number($('#js-item-quantity').val());
+            }
+
+            cartApp.createSubmitLoader($(this)[0]);
+
+            $.ajax({
+                url: '/shop/cart/add',
+                type: 'POST',
+                dataType: 'json',
+                data: {id: id, quantity: quantity, _csrf: yii.getCsrfToken()},
+                beforeSend: function( xhr ) {
+                    cartApp.startSubmitLoader();
+                }
+            })
+            .done(function(data) {
+                cartApp.updateHeaderCart(data);
+                cartApp.updateModalCart(data.addCartModal);
+                $.fancybox.open($('#addCartModal'));
+                //cartApp._thank('Товар успешно добавлен в коризну<br><br><b><a href="/cart">Перейти в корзину</a></b>');
+            })
+            .fail(function() {
+                //cartApp._thank('При отправке произошла ошибка, пожалуйста повторите запрос');
+            })
+            .always(function(){cartApp.stopSubmitLoader();});
+
+            return false;
+        });
+
+        // Изменить количество товаров в корзине
+        $(document).on('click', '.js-cart-update-add, .js-cart-update-remove', function() {
+            event.preventDefault();
+
+            var button = $(this);
+            var cartPosition = $(this).closest('.js-cart-position-item');
+            var id = cartPosition.attr('data-id');
+            var quantity = cartPosition.find('.js-cart-quantity').val();
+
+            cartApp.cartUpdate(id, quantity, button);
+        });
+
+        // Изменить количество товаров в корзине (через инпут)
+        $(document).on('change', '.js-cart-quantity', function(event) {
+            event.preventDefault();
+
+            var button = $(this);
+            var cartPosition = $(this).closest('.js-cart-position-item');
+            var id = cartPosition.attr('data-id');
+            var quantity = $(this).val();
+
+            cartApp.cartUpdate(id, quantity, button);
+        });
+
+        // Удалить из корзины
+        $(document).on('click', '.js-cart-remove', function(event) {
+            event.preventDefault();
+
+            var button = $(this);
+            var cartPosition = $(this).closest('.js-cart-position-item');
+            var id = cartPosition.attr('data-id');
+
+            $.ajax({
+                url: '/shop/cart/remove',
+                type: 'GET',
+                dataType: 'json',
+                data: {id: id},
+                beforeSend: function( xhr ) {
+                    //cartApp.startSubmitLoader();
+                }
+            })
+            .done(function(data) {
+                cartApp.updateHeaderCart(data.allCount);
+                $('#js-total-price').text(data.cost + ' руб.');
+                $('#js-total-price-discount').text(data.costDiscount + ' руб.');
+                cartPosition.remove();
+                
+                if (parseInt(data.allCount) <= 0) {
+                    $('.form_cart, .cart-tabs').remove();
+                }
+                // _thank('Товар успешно добавлен в коризну')
+            })
+            .fail(function() {cartApp._thank('При отправке произошла ошибка, пожалуйста повторите запрос');})
+            .always(function(){
+                // cartApp.stopSubmitLoader();
+            });
+        });
+
+        // фильтрация
+        $(document).on('beforeSubmit', '#js-filter-form', function (e) {
+
+            cartApp.createSubmitLoader($(this).find('.ladda-button')[0]);
+
+            var form = $(this);
+            $.ajax({
+                url: form.attr('action'),
+                type: 'GET',
+                dataType: 'json',
+                data: form.serialize(),
+                beforeSend: function( xhr ) {
+                    cartApp.startSubmitLoader();
+                }
+            })
+            .done(function(data) {
+                $('#js-update-filter').html(data.content);
+                window.history.pushState('url', 'Title', form.attr('action')+'?'+form.serialize());
+            })
+            .fail(function() {cartApp._thank('При отправке произошла ошибка, пожалуйста повторите запрос');})
+            .always(function(){cartApp.stopSubmitLoader();});
+
+            return false;
+        });
+
+        $('body').on('click', '.js-get-next', function(event) {
+            event.preventDefault();
+            var url = $(this).attr('href');
+            var offset = parseInt($(this).attr('data-offset'));
+            var offsetOrigin = parseInt($(this).attr('data-origin-offset'));
+            var updateBlock = $(this).attr('data-update');
+
+            cartApp.getNext(url, offset, updateBlock, $(this));
+
+            $(this).attr('data-offset', offset + offsetOrigin);
+        });
+
+        $(document).on('click', 'a.fav', function(event) {
+            event.preventDefault();
+            cartApp.changeFavItem($(this).data('id'));
+            return false;
+        });
+    },
+
+    changeFavItem: function (id) {
+        $.ajax({
+            type: "POST",
+            url: '/catalog/item/set-favorite',
+            data: {item_id : id},
+            dataType: 'json',
+            beforeSend: function(request){},
+            success: function(list) {
+                if(list.class === 0)
+                {
+                    $('.fav_' + list.id).removeClass('active');
+                    $('.fav a').removeClass('active');
+                    $('.fav_list_item_' + list.id).remove();
+                } else {
+                    if(list.class === 1)
+                    {
+                        $('.fav_' + list.id).addClass('active');
+                        $('.fav a').addClass('active');
+                    }
+                }
+
+                $('.favorite-num').text(list.favCount);
+            }
+        });
+    },
+
+    updateHeaderCart: function(data){
+        $('.top-cart').html(data.topCart);
+        $('.cart_block_mobile .counter').html(data.allCount);
+    },
+
+    updateModalCart: function(data){
+        $('.addCartModal').html(data);
+    },
+
+    createSubmitLoader: function(button){
+        loader = Ladda.create(button);
+    },
+    startSubmitLoader: function(){
+        loader.start();
+    },
+    stopSubmitLoader: function(){
+        loader.stop();
+    },
+
+    // Обновить количестов заказов в коризне
+    cartUpdate: function(id, quantity, button){
+        $.ajax({
+            url: '/shop/cart/update',
+            type: 'GET',
+            dataType: 'json',
+            data: {id: id, quantity: quantity, _csrf: yii.getCsrfToken()},
+            beforeSend: function( xhr ) {
+                button.addClass('disabled');
+                // cartApp.startSubmitLoader();
+            }
+        })
+        .done(function(data) {
+            if(data){
+                cartApp.updateHeaderCart(data.allCount);
+                $('#js-cartPosition-'+data.id+' .js-cart-item-price').text(data.price + ' руб.');
+                $('#js-total-price').text(data.cost + ' руб.');
+                $('#js-total-price-discount').text(data.costDiscount + ' руб.');
+                $('#js-cartPosition-'+data.id+' .js-cart-item-quantity').text(data.count);
+                if(data.cost.replace(/[\s,]+/g, '') >= data.minCostOrder && data.allCount > 0)
+                {
+                    $('.cabinet-check').show();
+                } else {
+                    $('.cabinet-check').hide();
+                }
+            }
+            button.removeClass('disabled');
+            // cartApp._thank('Товар успешно добавлен в коризну')
+        })
+        .fail(function() {cartApp._thank('При отправке произошла ошибка, пожалуйста повторите запрос');})
+        .always(function(){
+            // cartApp.stopSubmitLoader();
+        });
+    },
+
+    getNext: function(url, offset, updateBlock, button){
+        cartApp.createSubmitLoader(button[0]);
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            data: {offset: offset},
+            beforeSend: function( xhr ) {
+                cartApp.startSubmitLoader();
+            }
+        })
+        .done(function(data) {
+            if(data.content){
+                $('#'+updateBlock).append(data.content)
+            }else{
+                button.hide();
+            }
+        })
+        .fail(function() {
+        })
+        .always(function(){cartApp.stopSubmitLoader();});
+    },
+
+    submitForm: function(){
+        $('#filterSubmit').click();
+    },
+
+    _thank: function(html){
+        var $dialog_thank = $('<div/>', {'class': 'dialog-thank', 'html': '<div class="text"></div>'}).appendTo('body');
+        $dialog_thank.find('.text').html(html);
+
+        $dialog_thank.dialog({
+            autoOpen: true,
+            modal: true,
+            width: 466,
+            draggable: false,
+            resizable: false,
+            dialogClass: 'ui-dialog-thank',
+            closeText: '',
+            show: {
+                effect: 'drop', duration: 400
+            },
+            hide: {
+                effect: 'drop', duration: 400
+            },
+            open: function(){
+                $('.ui-widget-overlay').on('click', function(){
+                    $dialog_thank.dialog('close');
+                });
+            },
+            close: function(){
+                $dialog_thank.find('.text').html('');
+            }
+        });
+    },
+
+    /*getAllByRooms: function(rooms){
+     $.ajax({
+     url: '/flat/default/get-all-by-rooms',
+     type: 'POST',
+     dataType: 'json',
+     data: {rooms: rooms},
+     })
+     .done(function(data) {
+     if(data.flats){
+     var list = '';
+     data.flats.forEach(function(flat, i, arr) {
+     if(flat.id == data.defaultFlat.id){
+     list +='<li data-id='+flat.id+' class="active-plan">'+cartApp.dict[i]+'</li>';
+     }else{
+     list +='<li data-id='+flat.id+'>'+cartApp.dict[i]+'</li>';
+     }
+     });
+     $('.letters-list').html(list);
+     $('.slider-plans img').attr('src', data.defaultFlat.image);
+     }
+     })
+     .fail(function() {
+     })
+     .always(function() {
+     });
+
+     },
+
+     getFlatImage: function(id){
+     $.ajax({
+     url: '/flat/default/view',
+     type: 'POST',
+     dataType: 'json',
+     data: {id: id},
+     })
+     .done(function(data) {
+     if(data.flat){
+     $('.slider-plans img').attr('src', data.flat.image);
+     }
+     })
+     .fail(function() {
+     })
+     .always(function() {
+     });
+
+     },
+
+     // Всплывающее сообщение
+     alertMessage : function(content){
+     $('#notify_success').notify({
+     delay: 500,
+     hideDelay: 8000,
+     content: content,
+     });
+     },
+
+     // submit lloader
+     createSubmitLoader: function(button){
+     loader = Ladda.create(button);
+     },
+     startSubmitLoader: function(){
+     loader.start();
+     },
+     stopSubmitLoader: function(){
+     loader.stop();
+     },*/
+};
+
+$(window).load(function() {
+    cartApp.init();
+});
+
+}
+/*
+     FILE ARCHIVED ON 22:18:48 Mar 14, 2022 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 12:40:21 Jun 05, 2022.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 1053.688
+  exclusion.robots: 0.104
+  exclusion.robots.policy: 0.096
+  cdx.remote: 0.064
+  esindex: 0.008
+  LoadShardBlock: 1025.395 (3)
+  PetaboxLoader3.datanode: 1050.126 (5)
+  CDXLines.iter: 17.911 (3)
+  load_resource: 141.82
+  PetaboxLoader3.resolve: 61.697
+  loaddict: 36.001
+*/

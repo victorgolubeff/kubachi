@@ -1,0 +1,196 @@
+var _____WB$wombat$assign$function_____ = function(name) {return (self._wb_wombat && self._wb_wombat.local_init && self._wb_wombat.local_init(name)) || self[name]; };
+if (!self.__WB_pmw) { self.__WB_pmw = function(obj) { this.__WB_source = obj; return this; } }
+{
+  let window = _____WB$wombat$assign$function_____("window");
+  let self = _____WB$wombat$assign$function_____("self");
+  let document = _____WB$wombat$assign$function_____("document");
+  let location = _____WB$wombat$assign$function_____("location");
+  let top = _____WB$wombat$assign$function_____("top");
+  let parent = _____WB$wombat$assign$function_____("parent");
+  let frames = _____WB$wombat$assign$function_____("frames");
+  let opener = _____WB$wombat$assign$function_____("opener");
+
+(function(root, factory) {
+    if (typeof exports === "object") {
+        module.exports = factory();
+    } else if (typeof define === "function" && define.amd) {
+        define([ "./spin" ], factory);
+    } else {
+        root.Ladda = factory(root.Spinner);
+    }
+})(this, function(Spinner) {
+    "use strict";
+    var ALL_INSTANCES = [];
+    function create(button) {
+        if (typeof button === "undefined") {
+            console.warn("Ladda button target must be defined.");
+            return;
+        }
+        if (!button.querySelector(".ladda-label")) {
+            button.innerHTML = '<span class="ladda-label">' + button.innerHTML + "</span>";
+        }
+        var spinner = createSpinner(button);
+        var spinnerWrapper = document.createElement("span");
+        spinnerWrapper.className = "ladda-spinner";
+        button.appendChild(spinnerWrapper);
+        var timer;
+        var instance = {
+            start: function() {
+                button.setAttribute("disabled", "");
+                button.setAttribute("data-loading", "");
+                clearTimeout(timer);
+                spinner.spin(spinnerWrapper);
+                this.setProgress(0);
+                return this;
+            },
+            startAfter: function(delay) {
+                clearTimeout(timer);
+                timer = setTimeout(function() {
+                    instance.start();
+                }, delay);
+                return this;
+            },
+            stop: function() {
+                button.removeAttribute("disabled");
+                button.removeAttribute("data-loading");
+                clearTimeout(timer);
+                timer = setTimeout(function() {
+                    spinner.stop();
+                }, 1e3);
+                return this;
+            },
+            toggle: function() {
+                if (this.isLoading()) {
+                    this.stop();
+                } else {
+                    this.start();
+                }
+                return this;
+            },
+            setProgress: function(progress) {
+                progress = Math.max(Math.min(progress, 1), 0);
+                var progressElement = button.querySelector(".ladda-progress");
+                if (progress === 0 && progressElement && progressElement.parentNode) {
+                    progressElement.parentNode.removeChild(progressElement);
+                } else {
+                    if (!progressElement) {
+                        progressElement = document.createElement("div");
+                        progressElement.className = "ladda-progress";
+                        button.appendChild(progressElement);
+                    }
+                    progressElement.style.width = (progress || 0) * button.offsetWidth + "px";
+                }
+            },
+            enable: function() {
+                this.stop();
+                return this;
+            },
+            disable: function() {
+                this.stop();
+                button.setAttribute("disabled", "");
+                return this;
+            },
+            isLoading: function() {
+                return button.hasAttribute("data-loading");
+            },
+            getTarget: function() {
+                return button;
+            }
+        };
+        ALL_INSTANCES.push(instance);
+        return instance;
+    }
+    function bind(target, options) {
+        options = options || {};
+        var targets = [];
+        if (typeof target === "string") {
+            targets = toArray(document.querySelectorAll(target));
+        } else if (typeof target === "object" && typeof target.nodeName === "string") {
+            targets = [ target ];
+        }
+        for (var i = 0, len = targets.length; i < len; i++) {
+            (function() {
+                var element = targets[i];
+                if (typeof element.addEventListener === "function") {
+                    var instance = create(element);
+                    var timeout = -1;
+                    element.addEventListener("click", function() {
+                        instance.startAfter(1);
+                        if (typeof options.timeout === "number") {
+                            clearTimeout(timeout);
+                            timeout = setTimeout(instance.stop, options.timeout);
+                        }
+                        if (typeof options.callback === "function") {
+                            options.callback.apply(null, [ instance ]);
+                        }
+                    }, false);
+                }
+            })();
+        }
+    }
+    function stopAll() {
+        for (var i = 0, len = ALL_INSTANCES.length; i < len; i++) {
+            ALL_INSTANCES[i].stop();
+        }
+    }
+    function createSpinner(button) {
+        var height = button.offsetHeight, spinnerColor;
+        if (height > 32) {
+            height *= .8;
+        }
+        if (button.hasAttribute("data-spinner-size")) {
+            height = parseInt(button.getAttribute("data-spinner-size"), 10);
+        }
+        if (button.hasAttribute("data-spinner-color")) {
+            spinnerColor = button.getAttribute("data-spinner-color");
+        }
+        var lines = 12, radius = height * .2, length = radius * .6, width = radius < 7 ? 2 : 3;
+        return new Spinner({
+            color: spinnerColor || "#fff",
+            lines: lines,
+            radius: radius,
+            length: length,
+            width: width,
+            zIndex: "auto",
+            top: "50%",
+            left: "50%",
+            className: ""
+        });
+    }
+    function toArray(nodes) {
+        var a = [];
+        for (var i = 0; i < nodes.length; i++) {
+            a.push(nodes[i]);
+        }
+        return a;
+    }
+    return {
+        bind: bind,
+        create: create,
+        stopAll: stopAll
+    };
+});
+
+}
+/*
+     FILE ARCHIVED ON 01:13:26 Mar 15, 2022 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 12:40:20 Jun 05, 2022.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 71.19
+  exclusion.robots: 0.111
+  exclusion.robots.policy: 0.103
+  cdx.remote: 0.074
+  esindex: 0.01
+  LoadShardBlock: 41.35 (3)
+  PetaboxLoader3.datanode: 84.148 (5)
+  CDXLines.iter: 17.378 (3)
+  load_resource: 119.104
+  PetaboxLoader3.resolve: 43.239
+  loaddict: 28.309
+*/
